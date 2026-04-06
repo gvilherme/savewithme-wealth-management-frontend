@@ -29,7 +29,7 @@ function CategoryRow({
   onToggle?: () => void
   onDelete?: () => void
 }) {
-  const isSystem = category.user_id === null
+  const isSystem = !category.user_id
 
   return (
     <div className={`flex items-center justify-between py-3 ${!category.active ? 'opacity-50' : ''}`}>
@@ -122,7 +122,7 @@ export function CategoriesPage() {
   })
 
   const systemCategories = categories.filter((c) => !c.user_id)
-  const userCategories = categories.filter((c) => c.user_id !== null)
+  const userCategories = categories.filter((c) => !!c.user_id)
 
   return (
     <div className="space-y-6">
