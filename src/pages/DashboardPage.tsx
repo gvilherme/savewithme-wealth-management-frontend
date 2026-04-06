@@ -54,6 +54,7 @@ export function DashboardPage() {
   const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => accountsApi.list(true),
+    staleTime: 0,
   })
 
   const { data: transactions = [], isLoading: loadingTx } = useQuery({

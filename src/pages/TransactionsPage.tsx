@@ -77,7 +77,10 @@ export function TransactionsPage() {
     },
   })
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['transactions'] })
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['transactions'] })
+    qc.invalidateQueries({ queryKey: ['accounts'] })
+  }
 
   const createMut = useMutation({
     mutationFn: transactionsApi.create,

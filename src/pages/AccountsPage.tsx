@@ -40,6 +40,7 @@ export function AccountsPage() {
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => accountsApi.list(),
+    staleTime: 0,
   })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['accounts'] })
