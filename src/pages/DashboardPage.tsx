@@ -19,6 +19,7 @@ function TransactionRow({ tx, accounts }: { tx: Transaction; accounts: Account[]
   const account = accounts.find((a) => a.id === tx.account_id)
   const isExpense = tx.type === 'EXPENSE'
   const isTransfer = tx.type === 'TRANSFER'
+  const isDebit = isExpense || (isTransfer && !!tx.destination_account_id)
 
   return (
     <div className="flex items-center justify-between py-3">
@@ -38,8 +39,8 @@ function TransactionRow({ tx, accounts }: { tx: Transaction; accounts: Account[]
         </div>
       </div>
       <div className="text-right">
-        <p className={`text-sm font-semibold ${isExpense ? 'text-red-600' : 'text-emerald-600'}`}>
-          {isExpense ? '-' : '+'}{fmt(tx.amount, tx.currency)}
+        <p className={`text-sm font-semibold ${isDebit ? 'text-red-600' : 'text-emerald-600'}`}>
+          {isDebit ? '-' : '+'}{fmt(tx.amount, tx.currency)}
         </p>
         {tx.status !== 'ACTIVE' && (
           <span className="text-xs text-amber-500">{tx.status}</span>

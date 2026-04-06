@@ -165,6 +165,8 @@ export function TransactionsPage() {
             const category = categories.find((c) => c.id === tx.category_id)
             const isExpense = tx.type === 'EXPENSE'
             const isTransfer = tx.type === 'TRANSFER'
+            // source leg has destination_account_id set; partner (credit) leg does not
+            const isDebit = isExpense || (isTransfer && !!tx.destination_account_id)
             const canReverse = tx.status === 'ACTIVE'
 
             return (
@@ -192,8 +194,8 @@ export function TransactionsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <p className={`text-sm font-bold ${isExpense ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {isExpense ? '-' : '+'}{fmt(tx.amount, tx.currency)}
+                  <p className={`text-sm font-bold ${isDebit ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {isDebit ? '-' : '+'}{fmt(tx.amount, tx.currency)}
                   </p>
                   {canReverse && (
                     <button

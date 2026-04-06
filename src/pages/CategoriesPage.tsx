@@ -121,7 +121,7 @@ export function CategoriesPage() {
     onSuccess: invalidate,
   })
 
-  const systemCategories = categories.filter((c) => c.user_id === null)
+  const systemCategories = categories.filter((c) => !c.user_id)
   const userCategories = categories.filter((c) => c.user_id !== null)
 
   return (
