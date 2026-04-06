@@ -3,6 +3,9 @@ PROJECT = savewithme-frontend
 MODULES = $(PROJECT)-node-modules
 PORT    = 5173
 
+# Prevents Git Bash on Windows from converting /app to C:/Program Files/Git/app
+DOCKER  = MSYS_NO_PATHCONV=1 docker
+
 .PHONY: dev build install clean help
 
 dev: ## Sobe o dev server em localhost:5173 (API → localhost:8080)
@@ -12,7 +15,7 @@ dev: ## Sobe o dev server em localhost:5173 (API → localhost:8080)
 		echo "  cp .env.example .env.local"; \
 		exit 1; \
 	fi
-	docker run --rm -it \
+	$(DOCKER) run --rm -it \
 		-v "$(CURDIR):/app" \
 		-v "$(MODULES):/app/node_modules" \
 		-w /app \
@@ -23,7 +26,7 @@ dev: ## Sobe o dev server em localhost:5173 (API → localhost:8080)
 		sh -c "npm install --silent && npx vite --host 0.0.0.0 --port $(PORT)"
 
 install: ## Instala dependencias no volume Docker
-	docker run --rm \
+	$(DOCKER) run --rm \
 		-v "$(CURDIR):/app" \
 		-v "$(MODULES):/app/node_modules" \
 		-w /app \
@@ -31,7 +34,7 @@ install: ## Instala dependencias no volume Docker
 		npm install
 
 build: ## Build de producao
-	docker run --rm \
+	$(DOCKER) run --rm \
 		-v "$(CURDIR):/app" \
 		-v "$(MODULES):/app/node_modules" \
 		-w /app \
