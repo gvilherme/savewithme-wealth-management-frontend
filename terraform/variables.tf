@@ -15,3 +15,9 @@ variable "github_repo" {
   type        = string
   default     = "gvilherme/savewithme-wealth-management-frontend"
 }
+
+variable "domain_name" {
+  description = "Custom domain for the frontend (subdomain do GoDaddy)"
+  type        = string
+  default     = "savewithme.lorixlabs.com"
+}
