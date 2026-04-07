@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from '../ProtectedRoute'
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }))
 
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 function renderWithRouter(ui: React.ReactNode, initialPath = '/') {
   return render(
