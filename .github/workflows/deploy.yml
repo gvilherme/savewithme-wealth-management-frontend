@@ -1,23 +1,57 @@
-name: Deploy to S3 + CloudFront
+name: Deploy
 
 on:
   push:
     branches: [main]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
-    name: Build and Deploy
+    name: Terraform Apply + Build + Deploy
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # ─── AWS credentials (deploy role — write access) ────────────────────────
+      - name: Configure AWS credentials (OIDC — deploy role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN_DEPLOY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ─── Terraform ───────────────────────────────────────────────────────────
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve -input=false
+
+      # ─── Read Terraform outputs ──────────────────────────────────────────────
+      - name: Read Terraform outputs
+        id: tf
+        working-directory: terraform
+        run: |
+          echo "bucket=$(terraform output -raw s3_bucket)" >> "$GITHUB_OUTPUT"
+          echo "distribution=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+
+      # ─── Build frontend ──────────────────────────────────────────────────────
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
@@ -32,24 +66,22 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.ROLE_ARN_DEPLOY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Sync to S3
+      # ─── Deploy to S3 ────────────────────────────────────────────────────────
+      - name: Sync dist to S3
         run: |
-          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
-            --delete \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "index.html"
-
-          aws s3 cp dist/index.html s3://${{ secrets.S3_BUCKET }}/index.html \
+          # index.html — no cache (always fetch latest)
+          aws s3 cp dist/index.html s3://${{ steps.tf.outputs.bucket }}/index.html \
             --cache-control "no-cache, no-store, must-revalidate"
 
-      - name: Invalidate CloudFront cache
+          # All other assets — long cache (content-hashed filenames)
+          aws s3 sync dist/ s3://${{ steps.tf.outputs.bucket }}/ \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --delete
+
+      # ─── Invalidate CloudFront ───────────────────────────────────────────────
+      - name: Invalidate CloudFront
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --distribution-id ${{ steps.tf.outputs.distribution }} \
             --paths "/*"
