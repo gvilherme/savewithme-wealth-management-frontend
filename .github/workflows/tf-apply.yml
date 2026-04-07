@@ -1,0 +1,55 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/tf-apply.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC — deploy role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN_DEPLOY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      - name: Show outputs
+        working-directory: terraform
+        run: |
+          echo "### Terraform Outputs" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          terraform output >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Se for o primeiro apply, copie os valores acima e configure os secrets do repositório:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`S3_BUCKET\` ← s3_bucket" >> $GITHUB_STEP_SUMMARY
+          echo "- \`CLOUDFRONT_DISTRIBUTION_ID\` ← cloudfront_distribution_id" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ROLE_ARN_PLAN\` ← plan_role_arn" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ROLE_ARN_DEPLOY\` ← deploy_role_arn" >> $GITHUB_STEP_SUMMARY

@@ -35,7 +35,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.ROLE_ARN }}
+          role-to-assume: ${{ secrets.ROLE_ARN_DEPLOY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Sync to S3
