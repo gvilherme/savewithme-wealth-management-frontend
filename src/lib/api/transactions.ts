@@ -20,7 +20,7 @@ export interface TransactionFilters {
   to?: string
 }
 
-function buildQuery(filters: TransactionFilters): string {
+export function buildQuery(filters: TransactionFilters): string {
   const params = new URLSearchParams()
   if (filters.accountId) params.set('accountId', filters.accountId)
   if (filters.type) params.set('type', filters.type)
