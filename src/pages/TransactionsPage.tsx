@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, TrendingUp, TrendingDown, ArrowLeftRight, RotateCcw } from 'lucide-react'
+import { TrendingUp, TrendingDown, ArrowLeftRight, RotateCcw } from 'lucide-react'
 import { transactionsApi, type CreateTransactionDto } from '@/lib/api/transactions'
 import { accountsApi } from '@/lib/api/accounts'
 import { categoriesApi } from '@/lib/api/categories'
+import { useUserPreferences } from '@/contexts/UserPreferencesContext'
 import type { TransactionType, TransactionStatus } from '@/types/api'
-
-const fmt = (value: number, currency = 'BRL') =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value)
 
 const STATUS_LABEL: Record<TransactionStatus, string> = {
   PENDING: 'Pendente',
@@ -37,17 +35,70 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
+// Input de valor com máscara de centavos
+function AmountInput({
+  cents,
+  onChange,
+  currencyCode,
+  locale,
+}: {
+  cents: number
+  onChange: (cents: number) => void
+  currencyCode: string
+  locale: string
+}) {
+  const display = cents > 0
+    ? new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).format(cents / 100)
+    : ''
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '')
+    onChange(parseInt(digits || '0', 10))
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      placeholder={new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).format(0)}
+      value={display}
+      onChange={handleChange}
+      required
+      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+    />
+  )
+}
+
+const TYPE_CONFIG = {
+  INCOME:   { label: 'Nova receita',      icon: TrendingUp,     classes: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+  EXPENSE:  { label: 'Nova despesa',       icon: TrendingDown,   classes: 'bg-red-500 hover:bg-red-600 text-white' },
+  TRANSFER: { label: 'Nova transferência', icon: ArrowLeftRight, classes: 'bg-blue-500 hover:bg-blue-600 text-white' },
+} as const
+
+const MODAL_TITLES: Record<TransactionType, string> = {
+  INCOME: 'Nova receita',
+  EXPENSE: 'Nova despesa',
+  TRANSFER: 'Nova transferência',
+}
+
 export function TransactionsPage() {
   const qc = useQueryClient()
-  const [showCreate, setShowCreate] = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
+  const { currency } = useUserPreferences()
+
+  const fmt = (value: number, txCurrency?: string) => {
+    const code = txCurrency ?? currency.code
+    return new Intl.NumberFormat(currency.locale, { style: 'currency', currency: code }).format(value)
+  }
 
   const today = new Date().toISOString().split('T')[0]
+  const [showCreate, setShowCreate] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [amountCents, setAmountCents] = useState(0)
   const [form, setForm] = useState<CreateTransactionDto>({
     type: 'EXPENSE',
     account_id: '',
     amount: 0,
-    currency: 'BRL',
+    currency: currency.code,
     date: today,
   })
 
@@ -84,7 +135,12 @@ export function TransactionsPage() {
 
   const createMut = useMutation({
     mutationFn: transactionsApi.create,
-    onSuccess: () => { invalidate(); setShowCreate(false); setApiError(null) },
+    onSuccess: () => {
+      invalidate()
+      setShowCreate(false)
+      setApiError(null)
+      setAmountCents(0)
+    },
     onError: (e: Error) => setApiError(e.message),
   })
 
@@ -93,18 +149,36 @@ export function TransactionsPage() {
     onSuccess: invalidate,
   })
 
+  const openCreate = (type: TransactionType) => {
+    setForm({ type, account_id: '', amount: 0, currency: currency.code, date: today })
+    setAmountCents(0)
+    setApiError(null)
+    setShowCreate(true)
+  }
+
+  const activeAccounts = accounts.filter((a) => a.is_active)
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE' && c.active)
+  const incomeCategories = categories.filter((c) => c.type === 'INCOME' && c.active)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header + quick action buttons */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Transações</h1>
-        <button
-          onClick={() => { setShowCreate(true); setApiError(null) }}
-          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
-        >
-          <Plus size={16} /> Nova
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          {(['INCOME', 'EXPENSE', 'TRANSFER'] as TransactionType[]).map((type) => {
+            const { label, icon: Icon, classes } = TYPE_CONFIG[type]
+            return (
+              <button
+                key={type}
+                onClick={() => openCreate(type)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${classes}`}
+              >
+                <Icon size={14} /> {label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Filters */}
@@ -138,20 +212,10 @@ export function TransactionsPage() {
           <option value="PENDING_REVERSAL">Estornando</option>
           <option value="REVERSED">Estornada</option>
         </select>
-        <input
-          type="date"
-          value={filterFrom}
-          onChange={(e) => setFilterFrom(e.target.value)}
-          className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          title="De"
-        />
-        <input
-          type="date"
-          value={filterTo}
-          onChange={(e) => setFilterTo(e.target.value)}
-          className="col-span-2 md:col-span-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          title="Até"
-        />
+        <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} title="De"
+          className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} title="Até"
+          className="col-span-2 md:col-span-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
       </div>
 
       {/* List */}
@@ -169,26 +233,19 @@ export function TransactionsPage() {
             const isExpense = tx.type === 'EXPENSE'
             const isTransfer = tx.type === 'TRANSFER'
             const isIncome = tx.type === 'INCOME'
-            const canReverse = tx.status === 'ACTIVE'
 
             return (
               <div key={tx.id} className="flex items-center justify-between py-3 gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`p-2 rounded-full flex-shrink-0 ${isExpense ? 'bg-red-50' : isTransfer ? 'bg-blue-50' : 'bg-emerald-50'}`}>
-                    {isExpense ? (
-                      <TrendingDown size={15} className="text-red-500" />
-                    ) : isTransfer ? (
-                      <ArrowLeftRight size={15} className="text-blue-500" />
-                    ) : (
-                      <TrendingUp size={15} className="text-emerald-500" />
-                    )}
+                    {isExpense ? <TrendingDown size={15} className="text-red-500" />
+                      : isTransfer ? <ArrowLeftRight size={15} className="text-blue-500" />
+                      : <TrendingUp size={15} className="text-emerald-500" />}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{tx.description || '—'}</p>
                     <p className="text-xs text-gray-400 truncate">
-                      {account?.name ?? '—'}
-                      {category ? ` · ${category.name}` : ''}
-                      {' · '}{tx.date}
+                      {account?.name ?? '—'}{category ? ` · ${category.name}` : ''}{' · '}{tx.date}
                     </p>
                     <span className={`inline-block text-xs px-1.5 py-0.5 rounded-full mt-0.5 ${STATUS_COLOR[tx.status]}`}>
                       {STATUS_LABEL[tx.status]}
@@ -199,12 +256,9 @@ export function TransactionsPage() {
                   <p className={`text-sm font-bold ${isExpense ? 'text-red-600' : isIncome ? 'text-emerald-600' : 'text-blue-600'}`}>
                     {isExpense ? '-' : isIncome ? '+' : ''}{fmt(tx.amount, tx.currency)}
                   </p>
-                  {canReverse && (
-                    <button
-                      onClick={() => reverseMut.mutate(tx.id)}
-                      className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
-                      title="Estornar"
-                    >
+                  {tx.status === 'ACTIVE' && (
+                    <button onClick={() => reverseMut.mutate(tx.id)}
+                      className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Estornar">
                       <RotateCcw size={14} />
                     </button>
                   )}
@@ -217,31 +271,23 @@ export function TransactionsPage() {
 
       {/* Create modal */}
       {showCreate && (
-        <Modal title="Nova transação" onClose={() => setShowCreate(false)}>
+        <Modal title={MODAL_TITLES[form.type]} onClose={() => setShowCreate(false)}>
           <form
-            onSubmit={(e) => { e.preventDefault(); createMut.mutate(form) }}
+            onSubmit={(e) => { e.preventDefault(); createMut.mutate({ ...form, amount: amountCents / 100 }) }}
             className="space-y-3"
           >
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value as TransactionType, category_id: undefined, destination_account_id: undefined })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="EXPENSE">Despesa</option>
-              <option value="INCOME">Receita</option>
-              <option value="TRANSFER">Transferência</option>
-            </select>
+            {/* Conta de origem */}
             <select
               value={form.account_id}
               onChange={(e) => setForm({ ...form, account_id: e.target.value })}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">Conta de origem</option>
-              {accounts.filter((a) => a.is_active).map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
+              <option value="" disabled hidden>Conta de origem</option>
+              {activeAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
+
+            {/* Conta de destino — só para transferências */}
             {form.type === 'TRANSFER' && (
               <select
                 value={form.destination_account_id ?? ''}
@@ -249,12 +295,14 @@ export function TransactionsPage() {
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="">Conta de destino</option>
-                {accounts.filter((a) => a.is_active && a.id !== form.account_id).map((a) => (
+                <option value="" disabled hidden>Conta de destino</option>
+                {activeAccounts.filter((a) => a.id !== form.account_id).map((a) => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
             )}
+
+            {/* Categoria despesa */}
             {form.type === 'EXPENSE' && (
               <select
                 value={form.category_id ?? ''}
@@ -262,42 +310,50 @@ export function TransactionsPage() {
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="">Categoria</option>
-                {expenseCategories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                <option value="" disabled hidden>Categoria</option>
+                {expenseCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             )}
-            <input
-              type="number"
-              placeholder="Valor"
-              value={form.amount || ''}
-              onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
-              required
-              min={0.01}
-              step="0.01"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+
+            {/* Categoria receita (opcional) */}
+            {form.type === 'INCOME' && incomeCategories.length > 0 && (
+              <select
+                value={form.category_id ?? ''}
+                onChange={(e) => setForm({ ...form, category_id: e.target.value || undefined })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="" disabled hidden>Categoria (opcional)</option>
+                {incomeCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+
+            {/* Valor com máscara de centavos */}
+            <AmountInput
+              cents={amountCents}
+              onChange={setAmountCents}
+              currencyCode={currency.code}
+              locale={currency.locale}
             />
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <input
-              placeholder="Descrição (opcional)"
-              value={form.description ?? ''}
+
+            <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+
+            <input placeholder="Descrição (opcional)" value={form.description ?? ''}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+
             {apiError && <p className="text-sm text-red-600">{apiError}</p>}
+
             <button
               type="submit"
-              disabled={createMut.isPending}
-              className="w-full bg-emerald-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              disabled={createMut.isPending || amountCents === 0}
+              className={`w-full text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+                form.type === 'INCOME' ? 'bg-emerald-600 hover:bg-emerald-700'
+                : form.type === 'EXPENSE' ? 'bg-red-500 hover:bg-red-600'
+                : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
-              {createMut.isPending ? 'Criando...' : 'Criar transação'}
+              {createMut.isPending ? 'Criando...' : MODAL_TITLES[form.type]}
             </button>
           </form>
         </Modal>

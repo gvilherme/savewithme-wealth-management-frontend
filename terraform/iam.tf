@@ -56,6 +56,12 @@ resource "aws_iam_role_policy" "plan" {
         Effect = "Allow"
         Action = ["iam:Get*", "iam:List*"]
         Resource = "*"
+      },
+      {
+        Sid    = "ACMRead"
+        Effect = "Allow"
+        Action = ["acm:Describe*", "acm:Get*", "acm:List*"]
+        Resource = "*"
       }
     ]
   })
@@ -126,6 +132,12 @@ resource "aws_iam_role_policy" "deploy" {
         Effect = "Allow"
         Action = ["s3:*"]
         Resource = ["arn:aws:s3:::*"]
+      },
+      {
+        Sid    = "ACMManage"
+        Effect = "Allow"
+        Action = ["acm:*"]
+        Resource = "*"
       }
     ]
   })
