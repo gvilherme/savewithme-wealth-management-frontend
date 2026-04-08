@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { isShortSessionExpired, clearShortSession } from '@/pages/LoginPage'
 
 interface AuthContextValue {
   session: Session | null
@@ -17,7 +18,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+      const activeSession = data.session
+
+      // Se o usuário não marcou "Manter conectado" e a sessão de 1h expirou, faz logout
+      if (activeSession && isShortSessionExpired()) {
+        clearShortSession()
+        supabase.auth.signOut()
+        setSession(null)
+      } else {
+        setSession(activeSession)
+      }
+
       setLoading(false)
     })
 
@@ -29,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signOut = async () => {
+    clearShortSession()
     await supabase.auth.signOut()
   }
 
