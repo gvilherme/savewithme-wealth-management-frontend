@@ -3,11 +3,29 @@ import { Navigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
+const SESSION_EXPIRY_KEY = 'swm_session_expires_at'
+const SHORT_SESSION_MS = 60 * 60 * 1000 // 1 hora
+
+export function setShortSession() {
+  localStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SHORT_SESSION_MS))
+}
+
+export function clearShortSession() {
+  localStorage.removeItem(SESSION_EXPIRY_KEY)
+}
+
+export function isShortSessionExpired(): boolean {
+  const raw = localStorage.getItem(SESSION_EXPIRY_KEY)
+  if (!raw) return false
+  return Date.now() > parseInt(raw, 10)
+}
+
 export function LoginPage() {
   const { session, loading } = useAuth()
   const [tab, setTab] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -16,6 +34,8 @@ export function LoginPage() {
   if (session) return <Navigate to="/dashboard" replace />
 
   const handleGoogleSignIn = async () => {
+    // Google OAuth sempre mantém sessão longa (gerenciada pelo próprio Google)
+    clearShortSession()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/dashboard` },
@@ -32,6 +52,11 @@ export function LoginPage() {
       if (tab === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        if (!rememberMe) {
+          setShortSession()
+        } else {
+          clearShortSession()
+        }
       } else {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
@@ -105,6 +130,21 @@ export function LoginPage() {
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
+
+            {tab === 'signin' && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-600 rounded"
+                />
+                <span className="text-sm text-gray-600">Manter conectado</span>
+                {!rememberMe && (
+                  <span className="text-xs text-gray-400 ml-auto">sessão de 1h</span>
+                )}
+              </label>
+            )}
 
             {error && <p className="text-sm text-red-600">{error}</p>}
             {info && <p className="text-sm text-emerald-600">{info}</p>}

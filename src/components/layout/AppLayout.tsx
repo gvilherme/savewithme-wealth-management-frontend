@@ -1,17 +1,15 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Wallet, ArrowLeftRight, Tag, LogOut } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { LayoutDashboard, Wallet, ArrowLeftRight, Tag, Settings } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/accounts', icon: Wallet, label: 'Contas' },
-  { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
-  { to: '/categories', icon: Tag, label: 'Categorias' },
+  { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/accounts',     icon: Wallet,          label: 'Contas' },
+  { to: '/transactions', icon: ArrowLeftRight,  label: 'Transações' },
+  { to: '/categories',   icon: Tag,             label: 'Categorias' },
+  { to: '/settings',     icon: Settings,        label: 'Perfil' },
 ]
 
 export function AppLayout() {
-  const { user, signOut } = useAuth()
-
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar — desktop only */}
@@ -38,17 +36,6 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="px-4 py-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500 truncate mb-2">{user?.email}</p>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <LogOut size={16} />
-            Sair
-          </button>
-        </div>
       </aside>
 
       {/* Main content */}
