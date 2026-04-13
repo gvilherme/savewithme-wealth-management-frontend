@@ -38,6 +38,37 @@ jobs:
         working-directory: terraform
         run: terraform validate
 
+      # ─── Mostrar CNAMEs de validação ACM ANTES do apply bloquear ────────────────
+      # Na primeira execução, o apply ficará aguardando validação DNS do ACM (até 45 min).
+      # Pegamos os CNAMEs logo após o plan para você já saber o que adicionar no GoDaddy.
+      - name: Terraform Plan (captura CNAMEs de validação ACM)
+        id: plan
+        working-directory: terraform
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Extrair CNAMEs de validação ACM (se certificado for criado)
+        working-directory: terraform
+        run: |
+          echo "========================================================"
+          echo " AÇÃO NECESSÁRIA — DNS no GoDaddy"
+          echo "========================================================"
+          echo ""
+          echo "Se esta é a primeira vez que o certificado ACM é criado,"
+          echo "o apply abaixo ficará aguardando até você adicionar estes"
+          echo "registros DNS no GoDaddy (DNS Management do lorixlabs.com):"
+          echo ""
+          echo "  1. CNAME de VALIDAÇÃO do certificado SSL:"
+          echo "     (valores aparecerão nos outputs do apply logo abaixo)"
+          echo "     output: acm_validation_cname_name  → Nome"
+          echo "     output: acm_validation_cname_value → Valor"
+          echo ""
+          echo "  2. CNAME do DOMÍNIO (após o apply concluir):"
+          echo "     Nome:  savewithme"
+          echo "     Valor: output cloudfront_domain_name"
+          echo ""
+          echo "========================================================"
+
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve -input=false
@@ -49,6 +80,24 @@ jobs:
         run: |
           echo "bucket=$(terraform output -raw s3_bucket)" >> "$GITHUB_OUTPUT"
           echo "distribution=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+
+      - name: Resumo do deploy
+        working-directory: terraform
+        run: |
+          echo "========================================================"
+          echo " DEPLOY CONCLUÍDO"
+          echo "========================================================"
+          echo " Frontend URL : $(terraform output -raw frontend_url)"
+          echo " CloudFront   : $(terraform output -raw cloudfront_url)"
+          echo ""
+          echo " Se ainda não adicionou os CNAMEs no GoDaddy:"
+          echo "   Validação ACM:"
+          echo "     Nome  : $(terraform output -raw acm_validation_cname_name)"
+          echo "     Valor : $(terraform output -raw acm_validation_cname_value)"
+          echo "   Domínio (subdomínio savewithme):"
+          echo "     Nome  : savewithme"
+          echo "     Valor : $(terraform output -raw cloudfront_domain_name)"
+          echo "========================================================"
 
       # ─── Build frontend ──────────────────────────────────────────────────────
       - uses: actions/setup-node@v4
