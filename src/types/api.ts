@@ -53,3 +53,41 @@ export interface ApiError {
   detail: string
   timestamp: string
 }
+
+export interface BudgetProgressItem {
+  budgetId: string
+  categoryId: string
+  categoryType: CategoryType
+  budgetAmount: number
+  spentAmount: number
+  remainingAmount: number
+  progressPercent: number
+  referenceMonth: string
+}
+
+export interface BudgetUpsertItem {
+  categoryId: string
+  categoryType: CategoryType
+  amount: number
+}
+
+export interface BudgetUpsertDto {
+  referenceMonth: string
+  items: BudgetUpsertItem[]
+}
+
+export interface BudgetAlertMoneyAmount {
+  amount: number
+  currency: string
+}
+
+export interface BudgetAlertEvent {
+  budgetId: string
+  categoryId: string
+  categoryName: string | null
+  thresholdPercent: number
+  spentAmount: BudgetAlertMoneyAmount
+  budgetAmount: BudgetAlertMoneyAmount
+  referenceMonth: string
+  receivedAt?: string
+}

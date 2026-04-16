@@ -94,6 +94,7 @@ export function TransactionsPage() {
   })
 
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE' && c.active)
+  const incomeCategories = categories.filter((c) => c.type === 'INCOME' && c.active)
 
   return (
     <div className="space-y-6">
@@ -255,7 +256,7 @@ export function TransactionsPage() {
                 ))}
               </select>
             )}
-            {form.type === 'EXPENSE' && (
+            {(form.type === 'EXPENSE' || form.type === 'INCOME') && (
               <select
                 value={form.category_id ?? ''}
                 onChange={(e) => setForm({ ...form, category_id: e.target.value })}
@@ -263,7 +264,7 @@ export function TransactionsPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">Categoria</option>
-                {expenseCategories.map((c) => (
+                {(form.type === 'EXPENSE' ? expenseCategories : incomeCategories).map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
