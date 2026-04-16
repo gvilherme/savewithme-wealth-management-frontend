@@ -8,22 +8,65 @@ import { budgetsApi } from '@/lib/api/budgets'
 import { useAuth } from '@/hooks/useAuth'
 import type { Account, Transaction, BudgetProgressItem, Category } from '@/types/api'
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmt = (value: number, currency = 'BRL') =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value)
+
+function currentMonthRange() {
+  const now = new Date()
+  const from = new Date(now.getFullYear(), now.getMonth(), 1)
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return { from: fmt(from), to: fmt(to) }
+}
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   CHECKING: 'Corrente',
   SAVINGS: 'Poupança',
-  CREDIT_CARD: 'Cartão',
+  CREDIT_CARD: 'Cartão de Crédito',
   INVESTMENT: 'Investimento',
   CASH: 'Dinheiro',
 }
 
-const fmt = (value: number, currency = 'BRL') =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value)
+const ACCOUNT_TYPE_ICONS: Record<string, React.ReactNode> = {
+  CHECKING: <Landmark size={16} />,
+  SAVINGS: <PiggyBank size={16} />,
+  CREDIT_CARD: <CreditCard size={16} />,
+  INVESTMENT: <TrendingUp size={16} />,
+  CASH: <Banknote size={16} />,
+}
+
+// ─── Mock budgets (placeholder — no backend yet) ───────────────────────────────
+
+const MOCK_BUDGETS = [
+  { id: '1', name: 'Alimentação', spent: 820, limit: 1200, color: 'emerald' },
+  { id: '2', name: 'Transporte', spent: 380, limit: 400, color: 'amber' },
+  { id: '3', name: 'Lazer', spent: 290, limit: 250, color: 'red' },
+]
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+function Skeleton({ className }: { className?: string }) {
+  return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
+}
 
 function TransactionRow({ tx, accounts }: { tx: Transaction; accounts: Account[] }) {
   const account = accounts.find(a => a.id === tx.account_id)
   const isExpense = tx.type === 'EXPENSE'
   const isTransfer = tx.type === 'TRANSFER'
   const isIncome = tx.type === 'INCOME'
+
+  const formattedDate = new Date(tx.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  })
 
   return (
     <div className="flex items-center justify-between py-3">
@@ -32,11 +75,11 @@ function TransactionRow({ tx, accounts }: { tx: Transaction; accounts: Account[]
           className={`p-2 rounded-full ${isExpense ? 'bg-red-50' : isTransfer ? 'bg-blue-50' : 'bg-emerald-50'}`}
         >
           {isExpense ? (
-            <TrendingDown size={16} className="text-red-500" />
+            <TrendingDown size={15} className="text-red-500" />
           ) : isTransfer ? (
-            <ArrowLeftRight size={16} className="text-blue-500" />
+            <ArrowLeftRight size={15} className="text-blue-500" />
           ) : (
-            <TrendingUp size={16} className="text-emerald-500" />
+            <TrendingUp size={15} className="text-emerald-500" />
           )}
         </div>
         <div>
@@ -54,7 +97,7 @@ function TransactionRow({ tx, accounts }: { tx: Transaction; accounts: Account[]
           {fmt(tx.amount, tx.currency)}
         </p>
         {tx.status !== 'ACTIVE' && (
-          <span className="text-xs text-amber-500">{tx.status}</span>
+          <span className="text-xs text-amber-500">pendente</span>
         )}
       </div>
     </div>
@@ -127,9 +170,9 @@ export function DashboardPage() {
     staleTime: 0,
   })
 
-  const { data: transactions = [], isLoading: loadingTx } = useQuery({
-    queryKey: ['transactions', 'recent'],
-    queryFn: () => transactionsApi.list({ status: 'ACTIVE' }),
+  const { data: monthTx = [], isLoading: loadingMonthTx } = useQuery({
+    queryKey: ['transactions', 'month', from, to],
+    queryFn: () => transactionsApi.list({ status: 'ACTIVE', from, to }),
   })
 
   const { data: categories = [] } = useQuery({
@@ -146,23 +189,104 @@ export function DashboardPage() {
   })
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0)
-  const recentTx = transactions.slice(0, 10)
+
+  const monthIncome = monthTx
+    .filter((t) => t.type === 'INCOME')
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  const monthExpenses = monthTx
+    .filter((t) => t.type === 'EXPENSE')
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  const monthNet = monthIncome - monthExpenses
+
+  const expensePct =
+    monthIncome > 0 ? Math.min((monthExpenses / monthIncome) * 100, 100) : 0
+
+  const recentTx = [...monthTx]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
+
+  const firstName = user?.email?.split('@')[0] ?? 'você'
 
   const incomeBudgets = budgetProgress.filter(b => b.categoryType === 'INCOME')
   const expenseBudgets = budgetProgress.filter(b => b.categoryType === 'EXPENSE')
   const hasBudgets = budgetProgress.length > 0
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <div className="space-y-5 pb-6">
+      {/* Greeting */}
+      <div>
+        <p className="text-sm text-gray-500">Olá, {firstName} 👋</p>
+        <h1 className="text-2xl font-bold text-gray-900">Visão do mês</h1>
+      </div>
 
-      {/* Net worth */}
-      <div className="bg-emerald-600 text-white rounded-2xl p-6">
-        <p className="text-sm text-emerald-100">Saldo total</p>
-        {loadingAccounts ? (
-          <div className="h-8 w-36 mt-1 bg-emerald-500 rounded animate-pulse" />
-        ) : (
-          <p className="text-3xl font-bold mt-1">{fmt(totalBalance)}</p>
+      {/* Monthly summary card */}
+      <div className="bg-emerald-600 text-white rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-emerald-100 font-medium">{monthLabel}</p>
+          <span className="text-xs bg-emerald-500 text-emerald-100 px-2 py-0.5 rounded-full">
+            Consolidado
+          </span>
+        </div>
+
+        {/* Net balance */}
+        <div>
+          <p className="text-xs text-emerald-200 uppercase tracking-wider">Saldo total das contas</p>
+          {loadingAccounts ? (
+            <div className="h-9 w-40 mt-1 bg-emerald-500 rounded animate-pulse" />
+          ) : (
+            <p className="text-4xl font-bold mt-0.5 tracking-tight">{fmt(totalBalance)}</p>
+          )}
+        </div>
+
+        {/* Income / Expenses */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-emerald-500/50 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingUp size={13} className="text-emerald-200" />
+              <p className="text-xs text-emerald-200">Receitas</p>
+            </div>
+            {loadingMonthTx ? (
+              <div className="h-5 w-24 bg-emerald-500 rounded animate-pulse" />
+            ) : (
+              <p className="text-base font-bold">{fmt(monthIncome)}</p>
+            )}
+          </div>
+          <div className="bg-emerald-500/50 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingDown size={13} className="text-emerald-200" />
+              <p className="text-xs text-emerald-200">Despesas</p>
+            </div>
+            {loadingMonthTx ? (
+              <div className="h-5 w-24 bg-emerald-500 rounded animate-pulse" />
+            ) : (
+              <p className="text-base font-bold">{fmt(monthExpenses)}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Expense ratio bar */}
+        {!loadingMonthTx && monthIncome > 0 && (
+          <div>
+            <div className="flex justify-between text-xs text-emerald-200 mb-1">
+              <span>
+                Resultado:{' '}
+                <span className={monthNet >= 0 ? 'text-white font-semibold' : 'text-red-300 font-semibold'}>
+                  {monthNet >= 0 ? '+' : ''}{fmt(monthNet)}
+                </span>
+              </span>
+              <span>{Math.round(expensePct)}% gasto</span>
+            </div>
+            <div className="h-1.5 bg-emerald-500 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  expensePct >= 90 ? 'bg-red-400' : expensePct >= 70 ? 'bg-amber-300' : 'bg-white'
+                }`}
+                style={{ width: `${expensePct}%` }}
+              />
+            </div>
+          </div>
         )}
         <p className="text-sm text-emerald-100 mt-1">{accounts.length} conta(s) ativa(s)</p>
 
@@ -231,7 +355,42 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Accounts */}
+        <div className="bg-white border border-gray-200 rounded-2xl">
+          <div className="flex items-center justify-between px-4 pt-4 pb-1">
+            <h2 className="text-sm font-semibold text-gray-700">Contas</h2>
+            <Link
+              to="/accounts"
+              className="flex items-center gap-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Gerenciar <ChevronRight size={13} />
+            </Link>
+          </div>
+          <div className="px-4 divide-y divide-gray-100">
+            {loadingAccounts ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-3">
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-2.5 w-16" />
+                  </div>
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))
+            ) : accounts.length === 0 ? (
+              <p className="py-8 text-sm text-center text-gray-400">
+                Nenhuma conta ativa.
+              </p>
+            ) : (
+              accounts.map((account) => (
+                <AccountRow key={account.id} account={account} />
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Expense budgets */}

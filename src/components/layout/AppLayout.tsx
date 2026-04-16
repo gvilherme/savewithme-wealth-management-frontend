@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Wallet, ArrowLeftRight, Tag, LogOut, Bell, X } from 'lucide-react'
+
+import { LayoutDashboard, Wallet, ArrowLeftRight, Tag, Settings, LogOut, Bell, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { useBudgetAlerts } from '@/hooks/useBudgetAlerts'
@@ -8,10 +9,11 @@ import { categoriesApi } from '@/lib/api/categories'
 import type { BudgetAlertEvent, Category } from '@/types/api'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/accounts', icon: Wallet, label: 'Contas' },
-  { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
-  { to: '/categories', icon: Tag, label: 'Categorias' },
+  { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/accounts',     icon: Wallet,          label: 'Contas' },
+  { to: '/transactions', icon: ArrowLeftRight,  label: 'Transações' },
+  { to: '/categories',   icon: Tag,             label: 'Categorias' },
+  { to: '/settings',     icon: Settings,        label: 'Perfil' },
 ]
 
 const fmtMoney = (v: { amount: number; currency: string }) =>
@@ -186,17 +188,6 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="px-4 py-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500 truncate mb-2">{user?.email}</p>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <LogOut size={16} />
-            Sair
-          </button>
-        </div>
       </aside>
 
       {/* Main content */}
