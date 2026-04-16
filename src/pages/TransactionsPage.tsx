@@ -301,17 +301,17 @@ export function TransactionsPage() {
                 ))}
               </select>
             )}
-
-            {/* Categoria despesa */}
-            {form.type === 'EXPENSE' && (
+            {(form.type === 'EXPENSE' || form.type === 'INCOME') && (
               <select
                 value={form.category_id ?? ''}
                 onChange={(e) => setForm({ ...form, category_id: e.target.value })}
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="" disabled hidden>Categoria</option>
-                {expenseCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <option value="">Categoria</option>
+                {(form.type === 'EXPENSE' ? expenseCategories : incomeCategories).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
             )}
 
