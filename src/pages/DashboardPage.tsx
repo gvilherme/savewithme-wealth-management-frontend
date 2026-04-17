@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, ArrowLeftRight, Wallet, Settings2 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { TrendingUp, TrendingDown, ArrowLeftRight, Wallet, Settings2, ChevronRight } from 'lucide-react'
 import { accountsApi } from '@/lib/api/accounts'
 import { transactionsApi } from '@/lib/api/transactions'
 import { categoriesApi } from '@/lib/api/categories'
@@ -35,22 +35,6 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   CASH: 'Dinheiro',
 }
 
-const ACCOUNT_TYPE_ICONS: Record<string, React.ReactNode> = {
-  CHECKING: <Landmark size={16} />,
-  SAVINGS: <PiggyBank size={16} />,
-  CREDIT_CARD: <CreditCard size={16} />,
-  INVESTMENT: <TrendingUp size={16} />,
-  CASH: <Banknote size={16} />,
-}
-
-// ─── Mock budgets (placeholder — no backend yet) ───────────────────────────────
-
-const MOCK_BUDGETS = [
-  { id: '1', name: 'Alimentação', spent: 820, limit: 1200, color: 'emerald' },
-  { id: '2', name: 'Transporte', spent: 380, limit: 400, color: 'amber' },
-  { id: '3', name: 'Lazer', spent: 290, limit: 250, color: 'red' },
-]
-
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
@@ -62,11 +46,6 @@ function TransactionRow({ tx, accounts }: { tx: Transaction; accounts: Account[]
   const isExpense = tx.type === 'EXPENSE'
   const isTransfer = tx.type === 'TRANSFER'
   const isIncome = tx.type === 'INCOME'
-
-  const formattedDate = new Date(tx.date + 'T00:00:00').toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-  })
 
   return (
     <div className="flex items-center justify-between py-3">
@@ -156,6 +135,23 @@ function BudgetRow({
   )
 }
 
+function AccountRow({ account }: { account: Account }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+          <Wallet size={14} className="text-gray-500" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-800 truncate">{account.name}</p>
+          <p className="text-xs text-gray-400">{ACCOUNT_TYPE_LABELS[account.type] ?? account.type}</p>
+        </div>
+      </div>
+      <p className="text-sm font-semibold text-gray-700">{fmt(account.balance, account.currency)}</p>
+    </div>
+  )
+}
+
 export function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -163,6 +159,8 @@ export function DashboardPage() {
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
+  const { from, to } = currentMonthRange()
+  const monthLabel = `${MONTH_NAMES[now.getMonth()]} ${year}`
 
   const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
     queryKey: ['accounts'],
@@ -206,6 +204,7 @@ export function DashboardPage() {
   const recentTx = [...monthTx]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5)
+  const loadingTx = loadingMonthTx
 
   const firstName = user?.email?.split('@')[0] ?? 'você'
 

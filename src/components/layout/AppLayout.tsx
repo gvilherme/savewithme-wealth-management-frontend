@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { LayoutDashboard, Wallet, ArrowLeftRight, Tag, Settings, LogOut, Bell, X } from 'lucide-react'
+import { LayoutDashboard, Wallet, ArrowLeftRight, Tag, Settings, Bell, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { useBudgetAlerts } from '@/hooks/useBudgetAlerts'
@@ -154,7 +154,7 @@ function BellButton({
 }
 
 export function AppLayout() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const { alerts, dismiss, dismissAll } = useBudgetAlerts(user?.id)
 
   const { data: categories = [] } = useQuery({
