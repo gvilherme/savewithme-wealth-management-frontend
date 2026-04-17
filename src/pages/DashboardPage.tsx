@@ -355,7 +355,7 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
+        )}
 
         {/* Accounts */}
         <div className="bg-white border border-gray-200 rounded-2xl">
