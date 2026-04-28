@@ -34,7 +34,6 @@ export function LoginPage() {
   if (session) return <Navigate to="/dashboard" replace />
 
   const handleGoogleSignIn = async () => {
-    // Google OAuth sempre mantém sessão longa (gerenciada pelo próprio Google)
     clearShortSession()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -69,19 +68,21 @@ export function LoginPage() {
     }
   }
 
+  const inputClass = "w-full border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] placeholder:text-[var(--text-tertiary)]"
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)] px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-emerald-600">SaveWithMe</h1>
-          <p className="text-gray-500 mt-1 text-sm">Gerencie suas finanças com clareza</p>
+          <h1 className="text-3xl font-bold text-[var(--accent)]">SaveWithMe</h1>
+          <p className="text-[var(--text-secondary)] mt-1 text-sm">Gerencie suas finanças com clareza</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--border)] p-6">
           {/* Google */}
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center gap-3 border border-[var(--border)] rounded-lg py-2.5 px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -93,19 +94,21 @@ export function LoginPage() {
           </button>
 
           <div className="my-5 flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">ou</span>
-            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex-1 h-px bg-[var(--border)]" />
+            <span className="text-xs text-[var(--text-tertiary)]">ou</span>
+            <div className="flex-1 h-px bg-[var(--border)]" />
           </div>
 
           {/* Tabs */}
-          <div className="flex mb-4 bg-gray-100 rounded-lg p-1">
+          <div className="flex mb-4 bg-[var(--bg-secondary)] rounded-lg p-1">
             {(['signin', 'signup'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => { setTab(t); setError(null); setInfo(null) }}
                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                  tab === t
+                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                    : 'text-[var(--text-secondary)]'
                 }`}
               >
                 {t === 'signin' ? 'Entrar' : 'Cadastrar'}
@@ -120,7 +123,7 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className={inputClass}
             />
             <input
               type="password"
@@ -128,7 +131,7 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className={inputClass}
             />
 
             {tab === 'signin' && (
@@ -139,20 +142,20 @@ export function LoginPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 accent-emerald-600 rounded"
                 />
-                <span className="text-sm text-gray-600">Manter conectado</span>
+                <span className="text-sm text-[var(--text-secondary)]">Manter conectado</span>
                 {!rememberMe && (
-                  <span className="text-xs text-gray-400 ml-auto">sessão de 1h</span>
+                  <span className="text-xs text-[var(--text-tertiary)] ml-auto">sessão de 1h</span>
                 )}
               </label>
             )}
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {info && <p className="text-sm text-emerald-600">{info}</p>}
+            {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+            {info && <p className="text-sm text-[var(--accent)]">{info}</p>}
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-emerald-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              className="w-full bg-[var(--accent)] text-white rounded-lg py-2.5 text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50"
             >
               {submitting ? 'Aguarde...' : tab === 'signin' ? 'Entrar' : 'Criar conta'}
             </button>

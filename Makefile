@@ -6,7 +6,7 @@ PORT    = 5173
 # Prevents Git Bash on Windows from converting /app to C:/Program Files/Git/app
 DOCKER  = MSYS_NO_PATHCONV=1 docker
 
-.PHONY: dev build install clean help
+.PHONY: dev build install test clean help
 
 dev: ## Sobe o dev server em localhost:5173 (API → localhost:8080)
 	@if [ ! -f .env.local ]; then \
@@ -24,6 +24,14 @@ dev: ## Sobe o dev server em localhost:5173 (API → localhost:8080)
 		-e VITE_API_URL=http://localhost:8080 \
 		$(IMAGE) \
 		sh -c "npm install --silent && npx vite --host 0.0.0.0 --port $(PORT)"
+
+test: ## Roda os testes unitários via Docker
+	$(DOCKER) run --rm \
+		-v "$(CURDIR):/app" \
+		-v "$(MODULES):/app/node_modules" \
+		-w /app \
+		$(IMAGE) \
+		sh -c "npm install --silent && npm test"
 
 install: ## Instala dependencias no volume Docker
 	$(DOCKER) run --rm \
