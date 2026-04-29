@@ -16,8 +16,8 @@ const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-sm bg-[var(--bg-primary)] rounded-2xl p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+      <div className="w-full sm:max-w-sm bg-[var(--bg-primary)] rounded-t-2xl sm:rounded-2xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
           <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] text-lg leading-none">&times;</button>
@@ -122,14 +122,14 @@ export function AccountsPage() {
                     setNewName(account.name)
                     setApiError(null)
                   }}
-                  className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                   title="Renomear"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => toggleMut.mutate({ id: account.id, active: account.is_active })}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${
                     account.is_active
                       ? 'text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)]'
                       : 'text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]'

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(ls *.config.* *.config.js)",
+      "Bash(ls tailwind* vite*)",
+      "Bash(npx tsc *)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/rodri/AppData/Roaming/**)",
+      "Read(//c/Users/rodri/AppData/Local/**)",
+      "Bash(node --version)"
+    ]
+  }
+}

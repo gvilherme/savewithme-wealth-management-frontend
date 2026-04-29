@@ -2,6 +2,23 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* ── Mobile global fixes ──────────────────────────────────────────────────────
+   Unlayered rules (outside @layer) beat all Tailwind utility layers, so these
+   take effect even when a utility like text-sm is present on the element.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Prevent iOS auto-zoom on focus — inputs must be ≥16 px (RM-05) */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  font-size: max(16px, 1em);
+}
+
+/* Safe-area + bottom-nav clearance helper (RM-01) */
+.pb-nav-safe {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
 :root {
   --bg-primary:    #ffffff;
   --bg-secondary:  #f9fafb;

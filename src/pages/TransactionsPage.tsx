@@ -24,8 +24,8 @@ const STATUS_COLOR: Record<TransactionStatus, string> = {
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-sm bg-[var(--bg-primary)] rounded-2xl p-6 shadow-xl max-h-screen overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+      <div className="w-full sm:max-w-sm bg-[var(--bg-primary)] rounded-t-2xl sm:rounded-2xl p-6 shadow-xl max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
           <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] text-lg leading-none">&times;</button>
@@ -136,7 +136,7 @@ export function TransactionsPage() {
               <button
                 key={type}
                 onClick={() => openCreate(type)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${classes}`}
+                className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors ${classes}`}
               >
                 <Icon size={14} /> {label}
               </button>
@@ -145,8 +145,8 @@ export function TransactionsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+      {/* Filters — coluna única em mobile (RM-05) */}
+      <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
         <select value={filterAccountId} onChange={(e) => setFilterAccountId(e.target.value)} className={inputClass}>
           <option value="">Todas as contas</option>
           {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -165,7 +165,7 @@ export function TransactionsPage() {
           <option value="REVERSED">Estornada</option>
         </select>
         <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} title="De" className={inputClass} />
-        <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} title="Até" className={`col-span-2 md:col-span-1 ${inputClass}`} />
+        <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} title="Até" className={inputClass} />
       </div>
 
       {/* List */}
@@ -208,7 +208,7 @@ export function TransactionsPage() {
                   </p>
                   {tx.status === 'ACTIVE' && (
                     <button onClick={() => reverseMut.mutate(tx.id)}
-                      className="p-1.5 text-[var(--text-tertiary)] hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950 rounded-lg transition-colors" title="Estornar">
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--text-tertiary)] hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950 rounded-lg transition-colors" title="Estornar">
                       <RotateCcw size={14} />
                     </button>
                   )}
