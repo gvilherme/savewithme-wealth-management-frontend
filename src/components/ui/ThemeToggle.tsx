@@ -18,7 +18,7 @@ export function ThemeToggle() {
           onClick={() => setPreference(value)}
           aria-label={label}
           title={label}
-          className={`p-1.5 rounded-md transition-colors ${
+          className={`min-h-[44px] min-w-[36px] flex items-center justify-center rounded-md transition-colors ${
             preference === value
               ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'

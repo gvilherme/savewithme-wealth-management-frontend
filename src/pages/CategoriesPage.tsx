@@ -6,8 +6,8 @@ import type { Category, CategoryType } from '@/types/api'
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-sm bg-[var(--bg-primary)] rounded-2xl p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+      <div className="w-full sm:max-w-sm bg-[var(--bg-primary)] rounded-t-2xl sm:rounded-2xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
           <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] text-lg leading-none">&times;</button>
@@ -53,14 +53,14 @@ function CategoryRow({
         <div className="flex items-center gap-1">
           <button
             onClick={onEdit}
-            className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
             title="Editar"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={onToggle}
-            className={`p-1.5 rounded-lg transition-colors ${
+            className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${
               category.active
                 ? 'text-[var(--text-tertiary)] hover:text-[var(--warning)] hover:bg-[var(--warning-subtle)]'
                 : 'text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]'
@@ -71,7 +71,7 @@ function CategoryRow({
           </button>
           <button
             onClick={onDelete}
-            className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] rounded-lg transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] rounded-lg transition-colors"
             title="Excluir"
           >
             <Trash2 size={14} />

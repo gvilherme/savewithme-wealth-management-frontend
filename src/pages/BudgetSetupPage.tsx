@@ -27,7 +27,7 @@ function CategoryRow({
   onChange: (cents: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3">
+    <div className="flex items-center justify-between px-4 py-3 min-h-[44px]">
       <div className="flex items-center gap-2">
         {icon && <span className="text-lg leading-none">{icon}</span>}
         <span className="text-sm font-medium text-[var(--text-secondary)]">{name}</span>
@@ -138,7 +138,7 @@ export function BudgetSetupPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/dashboard')}
-          className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
         >
           <ArrowLeft size={20} className="text-[var(--text-secondary)]" />
         </button>

@@ -128,7 +128,7 @@ function BellButton({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className="relative p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
+        className="relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
         aria-label="Notificações"
       >
         <Bell size={20} className={hasAlerts ? 'text-[var(--warning)]' : 'text-[var(--text-tertiary)]'} />
@@ -204,9 +204,9 @@ export function AppLayout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 md:ml-56 pb-20 md:pb-0">
+      <div className="flex-1 md:ml-56 pb-nav-safe md:pb-0">
         {/* Mobile topbar with bell */}
-        <header className="md:hidden sticky top-0 z-10 bg-[var(--bg-secondary)] border-b border-[var(--border)] px-4 h-12 flex items-center justify-between">
+        <header className="md:hidden sticky top-0 z-10 bg-[var(--bg-secondary)] border-b border-[var(--border)] px-4 h-[52px] flex items-center justify-between">
           <span className="text-base font-bold text-[var(--accent)]">SaveWithMe</span>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -219,14 +219,17 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Bottom nav — mobile only */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-[var(--bg-primary)] border-t border-[var(--border)] flex">
+      {/* Bottom nav — mobile only (RM-01.1) */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 bg-[var(--bg-primary)] border-t border-[var(--border)] flex"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center py-3 text-xs font-medium transition-colors ${
+              `flex-1 flex flex-col items-center justify-center min-h-[56px] py-2 text-xs font-medium transition-colors ${
                 isActive ? 'text-[var(--accent)]' : 'text-[var(--text-tertiary)]'
               }`
             }

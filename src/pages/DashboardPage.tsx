@@ -113,7 +113,7 @@ function BudgetRow({ item, categories }: { item: BudgetProgressItem; categories:
     : `${fmt(item.remainingAmount)} restante`
 
   return (
-    <div className="px-4 py-3 space-y-1.5">
+    <div className="px-4 py-3 min-h-[44px] flex flex-col justify-center space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {cat?.icon && <span className="text-base leading-none">{cat.icon}</span>}
@@ -229,7 +229,7 @@ function SpendingBar({ transactions, categories }: { transactions: Transaction[]
           />
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+      <div className="flex flex-col gap-y-1.5 md:flex-row md:flex-wrap md:gap-x-4">
         {data.segments.map(seg => (
           <div key={seg.id} className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
@@ -405,15 +405,15 @@ export function DashboardPage() {
     <div className="space-y-5 pb-6">
 
       {/* RF-01 + RF-02: Balance + Leftover — 1fr 1fr on desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
 
         {/* RF-01: Balance card — fixed emerald accent */}
-        <div className="bg-emerald-600 dark:bg-emerald-800 text-white rounded-2xl p-5 space-y-1">
+        <div className="bg-emerald-600 dark:bg-emerald-800 text-white rounded-2xl p-4 md:p-5 space-y-1">
           <p className="text-xs text-emerald-200 dark:text-emerald-300 uppercase tracking-wider font-semibold">Saldo total</p>
           {loadingAccounts ? (
-            <div className="h-10 w-44 mt-1 bg-emerald-500 dark:bg-emerald-700 rounded animate-pulse" />
+            <div className="h-9 w-44 mt-1 bg-emerald-500 dark:bg-emerald-700 rounded animate-pulse" />
           ) : (
-            <p className="text-4xl font-bold tracking-tight">{fmt(totalBalance)}</p>
+            <p className="text-[28px] md:text-[32px] font-bold tracking-tight leading-tight">{fmt(totalBalance)}</p>
           )}
           <p className="text-xs text-emerald-300 dark:text-emerald-400 pt-1">{accounts.length} conta(s) ativa(s)</p>
           {balanceVariation !== null && (
@@ -429,13 +429,13 @@ export function DashboardPage() {
         </div>
 
         {/* RF-02: "Sobrou este mês" card */}
-        <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-2xl p-5 space-y-1">
+        <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-2xl p-4 md:p-5 space-y-1">
           <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider font-semibold">Sobrou este mês</p>
           <p className="text-xs text-[var(--text-tertiary)]">Receita − despesas até hoje</p>
           {loadingTx ? (
-            <Skeleton className="h-10 w-36 mt-1" />
+            <Skeleton className="h-8 w-36 mt-1" />
           ) : (
-            <p className={`text-3xl font-bold tracking-tight ${monthNet >= 0 ? 'text-[var(--accent)]' : 'text-[var(--danger)]'}`}>
+            <p className={`text-[20px] md:text-[22px] font-semibold tracking-tight leading-tight ${monthNet >= 0 ? 'text-[var(--accent)]' : 'text-[var(--danger)]'}`}>
               {monthNet >= 0 ? '+' : ''}{fmt(monthNet)}
             </p>
           )}
@@ -458,17 +458,17 @@ export function DashboardPage() {
       <div>
         <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">Contas</h2>
         {loadingAccounts ? (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="min-w-44 h-24" />)}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-24" />)}
           </div>
         ) : accounts.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">Nenhuma conta ativa. Crie uma em <strong>Contas</strong>.</p>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {accounts.map(account => {
               const weeklyNet = weeklyNetByAccount[account.id] ?? 0
               return (
-                <div key={account.id} className="min-w-44 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4 flex-shrink-0">
+                <div key={account.id} className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5">
                       <Wallet size={13} className="text-[var(--text-tertiary)]" />
@@ -507,7 +507,7 @@ export function DashboardPage() {
           </h2>
           <button
             onClick={() => navigate('/budgets/setup')}
-            className="flex items-center gap-1.5 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors"
+            className="flex items-center gap-1.5 min-h-[44px] px-2 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors"
           >
             <Settings2 size={14} /> Configurar
           </button>

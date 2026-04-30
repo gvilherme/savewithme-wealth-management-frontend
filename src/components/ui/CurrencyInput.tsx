@@ -37,7 +37,7 @@ export function CurrencyInput({ cents, onChange, disabled, required, className }
   return (
     <input
       type="text"
-      inputMode="numeric"
+      inputMode="decimal"
       placeholder={placeholder}
       value={display}
       onChange={handleChange}
